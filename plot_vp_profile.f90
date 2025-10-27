@@ -61,6 +61,7 @@ program plot_vp_profile
   
   call pgslw(2)
   call pgsch(1.2)
+  call pgscf(1)  ! 設定字體為簡單字體
   
     ! 設定兩個子圖
   call pgsubp(1, 2)
@@ -121,6 +122,10 @@ program plot_vp_profile
   x_center = (xmin + xmax) / 2.0
   call pgtext(x_center, ymax - (ymax - ymin) * 0.05, 'Vp (km/sec)')
   
+  ! 繪製第一個圖的內部色條圖例 (橫條形式，左下角)
+  call draw_colorbar_inside_horizontal(xmin + 10.0, xmin + 60.0, ymin + 10.0, ymin + 20.0, &
+                                       vp_min, vp_max, 'km/s', 1)
+  
   ! ========== 第二個圖: Vp Perturbation ==========
   call pgenv(xmin, xmax, ymin, ymax, 0, 0)
   
@@ -131,6 +136,7 @@ program plot_vp_profile
   l(4) = 0.75; r(4) = 0.5; g(4) = 0.5; b(4) = 1.0
   l(5) = 1.0; r(5) = 0.0; g(5) = 0.0; b(5) = 1.0  ! 藍色 (負擾動)
   
+  call pgscir(16, 255)  ! 重新設定色彩範圍
   call pgctab(l, r, g, b, 5, 1.0, 0.5)
   
   write(*,*) '開始繪製第二個圖 (Vp Perturbation)...'
@@ -172,6 +178,10 @@ program plot_vp_profile
   
   call pgtext(x_center, ymax - (ymax - ymin) * 0.05, 'Perturbation (%)')
   
+  ! 繪製第二個圖的內部色條圖例 (橫條形式，左下角)
+  call draw_colorbar_inside_horizontal(xmin + 10.0, xmin + 60.0, ymin + 10.0, ymin + 20.0, &
+                                       pert_min, pert_max, '%', 2)
+  
   ! 結束 PGPLOT
   call pgend
   
@@ -180,4 +190,130 @@ program plot_vp_profile
   write(*,*) 'gs -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -sOutputFile=vp_profile.pdf vp_profile.ps'
 
 end program plot_vp_profile
+
+! 繪製內部橫向色條圖例的 subroutine
+subroutine draw_colorbar_inside_horizontal(x1, x2, y1, y2, val_min, val_max, unit_label, color_type)
+  implicit none
+  real, intent(in) :: x1, x2, y1, y2, val_min, val_max
+  character(*), intent(in) :: unit_label
+  integer, intent(in) :: color_type
+  
+  integer :: i, n_segments, color_index
+  real :: dx, x_pos, val, color_ratio
+  character(len=20) :: val_str
+  
+  ! 色表參數 (與主程式一致)
+  integer, parameter :: ncolor = 10
+  real :: l(ncolor), r(ncolor), g(ncolor), b(ncolor)
+  
+  n_segments = 50  ! 橫向分段數
+  dx = (x2 - x1) / real(n_segments)
+  
+  ! 設定對應的色表
+  if (color_type == 1) then
+    ! Vp 色表 (紅到藍)
+    l(1) = 0.0; r(1) = 1.0; g(1) = 0.0; b(1) = 0.0
+    l(2) = 1.0/9.0; r(2) = 1.0; g(2) = 0.5; b(2) = 0.0
+    l(3) = 2.0/9.0; r(3) = 1.0; g(3) = 1.0; b(3) = 0.0
+    l(4) = 3.0/9.0; r(4) = 0.8; g(4) = 1.0; b(4) = 0.0
+    l(5) = 4.0/9.0; r(5) = 0.5; g(5) = 1.0; b(5) = 0.3
+    l(6) = 5.0/9.0; r(6) = 0.0; g(6) = 1.0; b(6) = 0.8
+    l(7) = 6.0/9.0; r(7) = 0.0; g(7) = 0.8; b(7) = 1.0
+    l(8) = 7.0/9.0; r(8) = 0.0; g(8) = 0.5; b(8) = 1.0
+    l(9) = 8.0/9.0; r(9) = 0.0; g(9) = 0.0; b(9) = 1.0
+    l(10) = 1.0; r(10) = 0.3; g(10) = 0.0; b(10) = 0.7
+    call pgctab(l, r, g, b, 10, 1.0, 0.5)
+  else
+    ! 擾動色表 (紅白藍)
+    l(1) = 0.0; r(1) = 1.0; g(1) = 0.0; b(1) = 0.0
+    l(2) = 0.25; r(2) = 1.0; g(2) = 0.5; b(2) = 0.5
+    l(3) = 0.5; r(3) = 1.0; g(3) = 1.0; b(3) = 1.0
+    l(4) = 0.75; r(4) = 0.5; g(4) = 0.5; b(4) = 1.0
+    l(5) = 1.0; r(5) = 0.0; g(5) = 0.0; b(5) = 1.0
+    call pgctab(l, r, g, b, 5, 1.0, 0.5)
+  end if
+  
+  ! 繪製橫向色條段
+  do i = 1, n_segments
+    x_pos = x1 + (i - 1) * dx
+    val = val_min + (i - 1) * (val_max - val_min) / real(n_segments - 1)
+    
+    ! 計算色彩索引
+    color_ratio = (val - val_min) / (val_max - val_min)
+    color_index = 16 + int(color_ratio * 239)
+    color_index = max(16, min(255, color_index))
+    
+    call pgsci(color_index)
+    call pgsfs(1)  ! 實心填充
+    call pgrect(x_pos, x_pos + dx, y1, y2)
+  end do
+  
+  ! 重置為黑色繪製框線和文字
+  call pgsci(1)
+  call pgsfs(2)  ! 空心
+  call pgrect(x1, x2, y1, y2)  ! 繪製邊框
+  
+  ! 添加數值標籤 (橫向排列)
+  write(val_str, '(f5.1)') val_min
+  call pgtext(x1 - 3.0, y1 - 4.0, val_str)
+  
+  write(val_str, '(f5.1)') (val_min + val_max) / 2.0
+  call pgtext((x1 + x2) / 2.0 - 3.0, y1 - 4.0, val_str)
+  
+  write(val_str, '(f5.1)') val_max
+  call pgtext(x2 - 3.0, y1 - 4.0, val_str)
+  
+  ! 添加單位標籤
+  call pgtext((x1 + x2) / 2.0 - 3.0, y2 + 3.0, unit_label)
+  
+end subroutine draw_colorbar_inside_horizontal
+
+! 繪製內部色條圖例的 subroutine
+subroutine draw_colorbar_inside(x1, x2, y1, y2, val_min, val_max, unit_label, color_type)
+  implicit none
+  real, intent(in) :: x1, x2, y1, y2, val_min, val_max
+  character(len=*), intent(in) :: unit_label
+  integer, intent(in) :: color_type  ! 1=Vp, 2=perturbation
+  
+  real :: dy, y_pos, val, color_ratio
+  integer :: i, n_segments, color_index
+  character(len=20) :: val_str
+  
+  n_segments = 50  ! 色條分段數
+  dy = (y2 - y1) / real(n_segments)
+  
+  ! 繪製色條矩形
+  do i = 1, n_segments
+    y_pos = y1 + (i - 1) * dy
+    val = val_min + (i - 1) * (val_max - val_min) / real(n_segments - 1)
+    
+    ! 計算色彩
+    color_ratio = (val - val_min) / (val_max - val_min)
+    color_index = 16 + int(color_ratio * 239)
+    color_index = max(16, min(255, color_index))
+    
+    call pgsci(color_index)
+    call pgsfs(1)  ! 實心填充
+    call pgrect(x1, x2, y_pos, y_pos + dy)
+  end do
+  
+  ! 重置為黑色繪製框線和文字
+  call pgsci(1)
+  call pgsfs(2)  ! 空心
+  call pgrect(x1, x2, y1, y2)  ! 繪製邊框
+  
+  ! 添加數值標籤
+  write(val_str, '(f4.1)') val_max
+  call pgtext(x2 + 1.0, y2 - 2.0, val_str)
+  
+  write(val_str, '(f4.1)') (val_min + val_max) / 2.0
+  call pgtext(x2 + 1.0, (y1 + y2) / 2.0 - 1.0, val_str)
+  
+  write(val_str, '(f4.1)') val_min
+  call pgtext(x2 + 1.0, y1 - 2.0, val_str)
+  
+  ! 添加單位標籤
+  call pgtext(x1 - 1.0, y2 + 5.0, unit_label)
+  
+end subroutine draw_colorbar_inside
 
