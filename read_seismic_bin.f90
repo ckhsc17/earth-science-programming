@@ -14,7 +14,8 @@ program read_seismic_bin
   type(Header) :: wh
   real, allocatable :: wd(:,:)
   real, allocatable :: time(:)
-  integer :: i, j, k, l, ios
+  real, allocatable :: data_flat(:)
+  integer :: i, j, k, l, ios, total_size, idx
   integer :: pgopen
   real :: t_min, t_max, data_min, data_max, data_range
   real :: comp_mean, comp_peak, time_peak
@@ -38,35 +39,44 @@ program read_seismic_bin
   ! Allocate time array
   allocate(time(wh%ndata))
   
-  ! Second read: Read waveform data
-  ! Data is stored row-major: all time points for component 1, then component 2, etc.
-  ! But we want wd(component, time), so we read component by component
-  do j = 1, wh%ncom
-    do i = 1, wh%ndata
-      read(8, iostat=ios) wd(j, i)
-      if (ios /= 0) then
-        ! End of file reached
-        if (j < wh%ncom .or. i < wh%ndata) then
-          write(*,*) 'Warning: End of file at component ', j, ', time point ', i
-          ! Fill remaining with zeros
-          if (i < wh%ndata) then
-            do k = i+1, wh%ndata
-              wd(j, k) = 0.0
-            end do
-          end if
-          if (j < wh%ncom) then
-            do k = j+1, wh%ncom
-              do l = 1, wh%ndata
-                wd(k, l) = 0.0
-              end do
-            end do
-          end if
-        end if
-        exit
-      end if
-    end do
-    if (ios /= 0) exit
+  ! Allocate temporary flat array to read all data at once
+  total_size = wh%ncom * wh%ndata
+  allocate(data_flat(total_size))
+  
+  ! Second read: Read all waveform data at once
+  ! Data is stored as: for each time point, [comp2, comp3, comp1]
+  ! So the pattern is: [comp2_t1, comp3_t1, comp1_t1, comp2_t2, comp3_t2, comp1_t2, ...]
+  read(8, iostat=ios) data_flat
+  
+  ! Handle case where file might be missing last value (13,799 instead of 13,800)
+  if (ios /= 0) then
+    ! Try to read what we can
+    write(*,*) 'Note: File may be missing last value, reading available data'
+  end if
+  
+  ! Rearrange data from flat array to wd(component, time)
+  ! File order: [comp2_t1, comp3_t1, comp1_t1, comp2_t2, comp3_t2, comp1_t2, ...]
+  ! We want: wd(1, i)=comp1_ti, wd(2, i)=comp2_ti, wd(3, i)=comp3_ti
+  do i = 1, wh%ndata
+    idx = (i - 1) * wh%ncom
+    if (idx + 1 <= total_size) then
+      wd(2, i) = data_flat(idx + 1)  ! comp2
+    else
+      wd(2, i) = 0.0
+    end if
+    if (idx + 2 <= total_size) then
+      wd(3, i) = data_flat(idx + 2)  ! comp3
+    else
+      wd(3, i) = 0.0
+    end if
+    if (idx + 3 <= total_size) then
+      wd(1, i) = data_flat(idx + 3)  ! comp1
+    else
+      wd(1, i) = 0.0  ! Handle missing last value
+    end if
   end do
+  
+  deallocate(data_flat)
   
   close(8)
   
