@@ -136,8 +136,12 @@ program read_seismic_bin
   if (wh%ncom > 0) then
     do j = 1, wh%ncom
       ! Calculate data range for this component
-      data_min = minval(wd(j, 1:wh%ndata)) * 1.1
-      data_max = maxval(wd(j, 1:wh%ndata)) * 1.1
+      ! Use symmetric range centered at 0
+      data_min = minval(wd(j, 1:wh%ndata))
+      data_max = maxval(wd(j, 1:wh%ndata))
+      data_range = max(abs(data_min), abs(data_max)) * 1.1
+      data_min = -data_range
+      data_max = data_range
       
       ! Set up plot environment
       if (j == 1) then
