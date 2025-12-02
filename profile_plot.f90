@@ -153,7 +153,8 @@ program earthquake_profile
   call pgsch(1.2)
   
   ! Set up plot environment
-  call pgenv(x_min, x_max, depth_min, depth_max, 0, 0)
+  ! Reverse Y axis: depth_max first, depth_min second (so 0 is at top, deeper is at bottom)
+  call pgenv(x_min, x_max, depth_max, depth_min, 0, 0)
   call pglabel('Distance along profile (km)', 'Depth (km)', &
                'Earthquake Profile: (120., 23.) to (122., 25.0)')
   
