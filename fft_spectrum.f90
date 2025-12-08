@@ -24,8 +24,10 @@ program fft_spectrum
   real, allocatable :: freq(:)
   real, allocatable :: amplitude(:,:)
   real, allocatable :: xreal(:), ximag(:)
+  real, allocatable :: filtered_wd(:,:)  ! Filtered waveform data
   real :: pi, df
   real :: amp
+  real :: f_low, f_high  ! Filter frequency range
   
   ! Plotting variables
   real :: f_min, f_max, amp_min, amp_max
@@ -130,19 +132,27 @@ program fft_spectrum
   write(*,'(A,F10.6,A)') '  Nyquist frequency: ', 1.0/(2.0*wh%dt), ' Hz'
   write(*,*) ''
   
+  ! Filter frequency range
+  f_low = 0.5   ! 0.5 Hz
+  f_high = 3.0  ! 3.0 Hz
+  write(*,*) 'Filter parameters:'
+  write(*,'(A,F5.2,A,F5.2,A)') '  Keep frequencies: ', f_low, ' - ', f_high, ' Hz'
+  write(*,*) ''
+  
   ! Allocate frequency and amplitude arrays
   allocate(freq(n_fft))
   allocate(amplitude(wh%ncom, n_fft))
   allocate(xreal(n_fft))
   allocate(ximag(n_fft))
+  allocate(filtered_wd(wh%ncom, wh%ndata))
   
   ! Calculate frequency array (0 to Nyquist frequency)
   do k = 1, n_fft
     freq(k) = real(k-1) * df
   end do
   
-  ! Compute FFT for each component
-  write(*,*) 'Computing FFT for each component...'
+  ! Compute FFT, filter, and IFFT for each component
+  write(*,*) 'Computing FFT, filtering, and IFFT for each component...'
   do j = 1, wh%ncom
     ! Initialize FFT arrays
     do i = 1, wh%ndata
@@ -157,25 +167,85 @@ program fft_spectrum
       end do
     end if
     
-    ! Call FFT subroutine
+    ! ===== Forward FFT =====
     call FFT(xreal, ximag, n_fft, nu)
     
-    ! Calculate amplitude spectrum
-    ! 直接使用 FFT 結果的模（不除以 N）
-    ! 這樣 amplitude 會對應原始時域信號的累積效應
+    ! Multiply by dt after FFT (as per user's notes)
+    do k = 1, n_fft
+      xreal(k) = xreal(k) * wh%dt
+      ximag(k) = ximag(k) * wh%dt
+    end do
+    
+    ! Calculate amplitude spectrum for plotting
     do k = 1, n_fft
       amp = sqrt(xreal(k)**2 + ximag(k)**2)
       amplitude(j, k) = amp
     end do
-    write(*,*) '  Component ', j, ' FFT complete'
+    
+    ! ===== Frequency Filtering: Keep 0.5-3 Hz, zero out others =====
+    ! For real signal FFT with N points:
+    ! k=1: DC (0 Hz)
+    ! k=2 to n_fft/2+1: positive frequencies (freq = (k-1)*df)
+    ! k=n_fft/2+2 to n_fft: negative frequencies
+    ! Negative frequency at k: freq = -(n_fft - k + 1)*df
+    ! Conjugate symmetry: X[k] = conj(X[n_fft-k+2]) for k=2 to n_fft/2
+    
+    do k = 1, n_fft
+      if (k == 1) then
+        ! DC component (0 Hz) - zero out since it's outside 0.5-3 Hz
+        xreal(k) = 0.0
+        ximag(k) = 0.0
+      else if (k <= n_fft/2 + 1) then
+        ! Positive frequencies (including Nyquist if n_fft is even)
+        if (freq(k) < f_low .or. freq(k) > f_high) then
+          xreal(k) = 0.0
+          ximag(k) = 0.0
+        end if
+      else
+        ! Negative frequencies: k > n_fft/2+1
+        ! Corresponding positive frequency index: n_fft - k + 2
+        ! Filter negative frequencies to maintain conjugate symmetry
+        if (n_fft - k + 2 <= n_fft/2 + 1) then
+          ! Check if corresponding positive frequency is in range
+          if (freq(n_fft - k + 2) < f_low .or. freq(n_fft - k + 2) > f_high) then
+            xreal(k) = 0.0
+            ximag(k) = 0.0
+          end if
+        else
+          ! Should not reach here, but zero out to be safe
+          xreal(k) = 0.0
+          ximag(k) = 0.0
+        end if
+      end if
+    end do
+    
+    ! ===== Inverse FFT =====
+    ! Prepare for IFFT: 
+    ! 1. Since we multiplied by dt after forward FFT, we need to undo that (divide by dt)
+    ! 2. Negate imaginary part to prepare for IFFT: FFT(conj(X[k])) gives N*conj(x[n])
+    !    Since x[n] is real, conj(x[n]) = x[n], so result is N*x[n]
+    do k = 1, n_fft
+      xreal(k) = xreal(k) / wh%dt
+      ximag(k) = -ximag(k) / wh%dt
+    end do
+    
+    ! Call FFT again for IFFT
+    call FFT(xreal, ximag, n_fft, nu)
+    
+    ! Extract filtered waveform (only original data points)
+    do i = 1, wh%ndata
+      filtered_wd(j, i) = xreal(i)
+    end do
+    
+    write(*,*) '  Component ', j, ' FFT -> Filter -> IFFT complete'
   end do
   write(*,*) ''
   
   deallocate(xreal)
   deallocate(ximag)
   
-  ! Initialize PGPLOT
-  if (pgopen('fft_spectrum.ps/vcps') <= 0) then
+  ! Initialize PGPLOT for filtered waveform plot
+  if (pgopen('filtered_waveform.ps/vcps') <= 0) then
     stop 'ERROR: Unable to open PostScript file'
   end if
   
@@ -183,42 +253,39 @@ program fft_spectrum
   call pgslw(2)
   call pgsch(1.0)
   
-  ! Plot each component's spectrum
+  ! Plot filtered waveform for each component
   do j = 1, wh%ncom
-    ! Calculate plot ranges
-    f_min = 0.0
-    f_max = 100.0  ! Plot up to 100 Hz
-    amp_min = 0.0
-    ! Find max amplitude up to 100 Hz
-    k = min(n_fft, int(100.0 / df) + 1)
-    amp_max = maxval(amplitude(j, 1:k)) * 1.1
+    ! Calculate plot ranges for time domain
+    f_min = time(1)
+    f_max = time(wh%ndata)
+    ! Calculate y-axis range and round to integer boundaries for tick interval of 1
+    amp_min = minval(filtered_wd(j, 1:wh%ndata)) * 1.1
+    amp_max = maxval(filtered_wd(j, 1:wh%ndata)) * 1.1
+    ! Round down min and round up max to nearest integers for clean tick marks
+    amp_min = floor(amp_min)
+    amp_max = ceiling(amp_max)
     
-    ! Set up plot environment
-    if (j == 1) then
-      call pgenv(f_min, f_max, amp_min, amp_max, 0, 0)
-    else
-      call pgenv(f_min, f_max, amp_min, amp_max, 0, 1)
-    end if
+    ! Set up plot window (without drawing axes to avoid duplicate labels)
+    call pgswin(f_min, f_max, amp_min, amp_max)
+    
+    ! Draw axes with y-axis major tick interval of 1
+    call pgsci(1)
+    call pgbox('BCNST', 0.0, 0, 'BCNIT', 1.0, 0)
     
     ! Set labels based on component
     if (j == 1) then
-      call pglabel('Frequency (Hz)', 'Amplitude', 'Vertical Component Spectrum')
+      call pglabel('Time (s)', 'Amplitude', 'Vertical Component (Filtered 0.5-3 Hz)')
     else if (j == 2) then
-      call pglabel('Frequency (Hz)', 'Amplitude', 'North-South Component Spectrum')
+      call pglabel('Time (s)', 'Amplitude', 'North-South Component (Filtered 0.5-3 Hz)')
     else if (j == 3) then
-      call pglabel('Frequency (Hz)', 'Amplitude', 'East-West Component Spectrum')
+      call pglabel('Time (s)', 'Amplitude', 'East-West Component (Filtered 0.5-3 Hz)')
     else
-      call pglabel('Frequency (Hz)', 'Amplitude', 'Component Spectrum')
+      call pglabel('Time (s)', 'Amplitude', 'Component (Filtered 0.5-3 Hz)')
     end if
     
-    ! Draw axes
-    call pgsci(1)
-    call pgbox('BCNST', 0.0, 0, 'BCNST', 0.0, 0)
-    
-    ! Plot amplitude spectrum (up to 100 Hz)
-    k = min(n_fft, int(100.0 / df) + 1)
+    ! Plot filtered waveform
     call pgsci(j+1)
-    call pgline(k, freq(1:k), amplitude(j, 1:k))
+    call pgline(wh%ndata, time(1:wh%ndata), filtered_wd(j, 1:wh%ndata))
     
     ! Reset to black
     call pgsci(1)
@@ -227,7 +294,7 @@ program fft_spectrum
   ! End PGPLOT
   call pgend
   
-  write(*,*) 'Plot complete. Output file: fft_spectrum.ps'
+  write(*,*) 'Filtered waveform plot complete. Output file: filtered_waveform.ps'
   write(*,*) ''
   
   ! Deallocate arrays
@@ -235,6 +302,7 @@ program fft_spectrum
   deallocate(time)
   deallocate(freq)
   deallocate(amplitude)
+  deallocate(filtered_wd)
   
 contains
   
