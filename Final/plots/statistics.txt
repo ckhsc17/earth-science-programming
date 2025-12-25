@@ -1,0 +1,24 @@
+Tsunami Simulation Statistics
+==================================================
+
+Grid Information:
+  Grid size: 1920 x 1800
+  Longitude range: 138.0021 to 145.9979°E
+  Latitude range: 34.0021 to 41.4979°N
+
+Time Information:
+  Time steps: 14
+  Time range: 0.0 to 3601.8 seconds
+  Duration: 60.0 minutes
+
+Surface Elevation Statistics:
+  Minimum: -10000000000.0000 m
+  Maximum: 10000000000.0000 m
+  Mean: -6571373017.1107 m
+  Standard deviation: 4794211494.9348 m
+  Maximum amplitude: 10000000000.0000 m
+
+Maximum Amplitude Location:
+  Longitude: 138.0021°E
+  Latitude: 34.0021°N
+  Time: 900.7 seconds (15.0 minutes)

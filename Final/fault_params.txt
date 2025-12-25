@@ -1,0 +1,23 @@
+!===============================================================================
+! Fault Parameters for 2011 Tohoku Earthquake (NP1 model)
+!===============================================================================
+! Format: key = value
+! Angles in degrees
+! Distances in meters (or km, will be auto-converted if < 100)
+! Coordinates in degrees (longitude, latitude)
+
+! Fault orientation
+strike = 203.0
+dip = 10.0
+rake = 90.0
+
+! Fault dimensions and slip
+slip = 50.0
+depth = 20.0    ! km (will be converted to meters)
+length = 500.0  ! km
+width = 200.0   ! km
+
+! Fault center location (approximate epicenter)
+lon_center = 142.0
+lat_center = 38.0
+
