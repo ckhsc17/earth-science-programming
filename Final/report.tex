@@ -25,10 +25,11 @@
 }
 
 % Title information
-\title{Numerical Simulation of the 2011 Tohoku Earthquake Tsunami:\\
-A Fortran-Based Implementation Using Okada Model and\\
+\title{Numerical Simulation of the 2011 Tohoku Earthquake Tsunami:
+A Fortran-Based Implementation Using Okada Model and
 2D Shallow Water Equations}
-\author{Bowen Chen}
+\author{B12705014 Chen Bo-Hua\\ 
+\small \href{https://github.com/ckhsc17/earth-science-programming/tree/main/Final}{GitHub}}
 \date{December 2025}
 
 \begin{document}
@@ -39,27 +40,13 @@ A Fortran-Based Implementation Using Okada Model and\\
 This study presents a numerical simulation framework for tsunami propagation following the 2011 Tohoku earthquake (M\textsubscript{w} 9.0). The simulation combines the Okada (1985) elastic dislocation model to compute initial seafloor displacement with a two-dimensional nonlinear shallow water equation solver to model wave propagation. The implementation uses Fortran 90 with modular design, incorporating GEBCO 2025 bathymetry data for the Japan Trench region. The numerical scheme employs an Arakawa C-grid finite difference method with leap-frog time stepping, ensuring numerical stability through CFL condition enforcement. Results demonstrate the capability to simulate tsunami wave propagation over complex bathymetry, providing insights into the spatial and temporal evolution of the tsunami wavefield. The modular architecture allows for flexible parameter adjustment and extension to other seismic events.
 \end{abstract}
 
-\section{Introduction}
+\section{Introduction & Motivation}
 
-Tsunamis represent one of the most devastating natural hazards, capable of causing catastrophic damage to coastal communities. The 2011 Tohoku earthquake (M\textsubscript{w} 9.0), which occurred on March 11, 2011, generated one of the most destructive tsunamis in recorded history, resulting in over 15,000 fatalities and widespread destruction along the northeastern coast of Japan \cite{satake2013}. The earthquake occurred at the subduction zone interface between the Pacific and North American plates, with the epicenter located approximately 130 km east of Sendai at a depth of 32 km \cite{usgs2011}.
+Tsunamis represent one of the most devastating natural hazards, capable of causing catastrophic damage to coastal communities. Although the last Tsunami that happened in Taiwan is far ago as to 1867 (in Keelung), it is still worth trying out some simulation since there are many earthquakes in Taiwan. The 2011 Tohoku earthquake (M\textsubscript{w} 9.0), which occurred on March 11, 2011, generated one of the most destructive tsunamis in recorded history, resulting in over 15,000 fatalities and widespread destruction along the northeastern coast of Japan \cite{satake2013}. The earthquake occurred at the subduction zone interface between the Pacific and North American plates, with the epicenter located approximately 130 km east of Sendai at a depth of 32 km \cite{usgs2011}.
 
 Numerical simulation of tsunamis requires accurate representation of two key physical processes: (1) the initial seafloor displacement caused by the earthquake, and (2) the subsequent wave propagation across the ocean basin. The Okada (1985) model provides an analytical solution for surface deformation due to fault slip in an elastic half-space, making it widely used for computing initial tsunami conditions \cite{okada1985}. Wave propagation is typically modeled using the shallow water equations, which describe the evolution of water surface elevation and horizontal velocity components under the assumption that vertical accelerations are negligible compared to gravitational acceleration.
 
 This study implements a complete tsunami simulation system in Fortran 90, combining these two modeling approaches to simulate the 2011 Tohoku tsunami. The implementation emphasizes modularity, computational efficiency, and compatibility with standard geophysical data formats.
-
-\subsection{Motivation}
-
-The motivation for this work stems from several key factors:
-
-\begin{itemize}
-    \item \textbf{Scientific Understanding}: Numerical simulations provide insights into tsunami generation mechanisms and propagation characteristics, helping to understand the complex interactions between seismic sources, bathymetry, and wave dynamics.
-    
-    \item \textbf{Hazard Assessment}: Accurate tsunami simulations are essential for coastal hazard assessment and the development of early warning systems, particularly in seismically active regions like the Pacific Ring of Fire.
-    
-    \item \textbf{Computational Efficiency}: Fortran remains the language of choice for high-performance scientific computing, offering excellent numerical performance for large-scale simulations while maintaining code readability and maintainability.
-    
-    \item \textbf{Educational Value}: Implementing a complete simulation framework from first principles provides valuable experience in numerical methods, geophysical modeling, and scientific programming.
-\end{itemize}
 
 \section{Expected Results}
 
@@ -92,6 +79,8 @@ The numerical implementation should exhibit:
     \item Proper handling of wet/dry boundaries at the coastline
     \item Minimal numerical dispersion and dissipation
 \end{itemize}
+
+In a nutshell, the experiment is expected to give an approximate simulation of surface elavation after the 2011 Tohoku earthquake that led to the devastating tsunami.
 
 \section{Methods}
 
@@ -278,9 +267,7 @@ The rigorous finite-fault implementation yields:
     \item Computational time: $\sim$30 seconds for 1920$\times$1800 grid
 \end{itemize}
 
-The DC3D results show significantly larger displacements and more realistic spatial patterns compared to the empirical model, with the asymmetry arising from the shallow thrust fault geometry (Figure \ref{fig:initial_displacement}).
-
-[Note: Insert figure showing initial displacement field]
+The DC3D results show significantly larger displacements and more realistic spatial patterns compared to the empirical model.
 
 \subsection{Wave Propagation}
 
@@ -322,32 +309,7 @@ The high-resolution grid (1920$\times$1800 points) and small time steps required
     \item \textbf{I/O Overhead}: Writing NetCDF output every 5 minutes adds $\sim$15\% overhead
 \end{itemize}
 
-Despite these challenges, the Fortran implementation achieved sufficient performance for research-scale simulations, demonstrating the language's continued relevance for scientific computing.
-
-[Note: Insert figures showing wave propagation at different time steps]
-
-\subsection{Numerical Performance}
-
-The numerical implementation demonstrates:
-
-\begin{itemize}
-    \item \textbf{Stability}: The simulation remains stable throughout the 1-hour duration, with the time step automatically adjusted to satisfy CFL conditions
-    \item \textbf{Conservation}: Mass conservation is maintained within numerical precision
-    \item \textbf{Efficiency}: The Fortran implementation achieves computational efficiency suitable for regional-scale simulations
-    \item \textbf{Boundary Handling}: Wet/dry boundaries are properly handled, with no spurious oscillations at the coastline
-\end{itemize}
-
-\subsection{Comparison with Observations}
-
-[Note: If available, compare simulation results with observed tsunami data from tide gauges or satellite altimetry]
-
-The simulated wave heights and arrival times can be compared with:
-\begin{itemize}
-    \item Tide gauge records from Japanese coastal stations
-    \item Satellite altimetry data (e.g., Jason-1, Jason-2)
-    \item Post-tsunami survey measurements
-    \item Other numerical simulation results from published studies
-\end{itemize}
+I didn't successfully run through the whole experiment, indicating that whether the input data precision should be slightly relaxed, or the algorithm could be improved further. On top of that, hardware improvement applying GPU could also be a way \cite{comcot_gfortran}.
 
 \subsection{Limitations and Future Improvements}
 
@@ -359,7 +321,7 @@ Several limitations should be acknowledged:
     \item \textbf{Bathymetry Resolution}: The 15 arc-second ($\sim$450 m) resolution may be insufficient to capture small-scale coastal features and harbor resonances
     \item \textbf{Boundary Conditions}: Simplified boundary conditions may not fully represent wave interactions at domain boundaries
     \item \textbf{Nonlinear Effects}: While nonlinear terms are included in the hand-written solver, higher-order effects (e.g., wave breaking, turbulence) are not explicitly modeled
-    \item \textbf{Computational Resources}: Full 3-hour simulations at high resolution require significant computational time, limiting parameter exploration
+    \item \textbf{Computational Resources}: Simulations at high resolution require significant computational time, limiting parameter exploration
 \end{itemize}
 
 \subsubsection{Validation with Real-World Data}
@@ -419,9 +381,9 @@ The development of multiple implementation variants (empirical vs. DC3D Okada; h
 
 While the current implementation represents a significant step forward, continued refinement incorporating more sophisticated physics, higher-resolution data, and systematic validation against observations will enhance the model's predictive capability and scientific value. The modular architecture developed here facilitates such incremental improvements while maintaining code clarity and reproducibility.
 
-\section*{Acknowledgments}
+\section*{Feedback}
 
-[Add acknowledgments as appropriate]
+As a student from Information Management department, this project is very challenging to me since I am not familiar with most of the physics concepts in fluid mechanics. The reason why I still choose it as my topic is simple: stay true to myself. I enjoy learning these new and interesting concepts, and after this project I have as well gotten a glimpse into what the whole numerical simulation process should be like. There are much room for improvement for this project, and I hope to get to dive deeper into it some day (the scope is way beyond my capability right now).
 
 \begin{thebibliography}{99}
 
