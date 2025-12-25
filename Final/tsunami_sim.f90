@@ -7,6 +7,9 @@
 program tsunami_sim
     use mod_netcdf_io
     use mod_okada
+#ifdef USE_DC3D
+    use mod_okada_dc3d
+#endif
     use mod_swe_solver
     use mod_netcdf_output
     implicit none
@@ -62,8 +65,17 @@ program tsunami_sim
     
     ! Step 3: Compute initial displacement
     write(*,*) 'Step 3: Computing initial seafloor displacement...'
+#ifdef USE_DC3D
+    write(*,*) '  Using DC3D finite fault implementation'
+#else
+    write(*,*) '  Using empirical point-source approximation'
+#endif
     allocate(initial_displacement(nx, ny))
+#ifdef USE_DC3D
+    call compute_initial_displacement_dc3d(lon, lat, nx, ny, fault, initial_displacement, ierr)
+#else
     call compute_initial_displacement(lon, lat, nx, ny, fault, initial_displacement, ierr)
+#endif
     if (ierr /= 0) then
         write(*,*) 'ERROR: Failed to compute initial displacement'
         stop 1

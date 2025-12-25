@@ -1,0 +1,99 @@
+# Fortran Compilation Files
+*.o
+*.mod
+*.smod
+*.a
+*.so
+*.dylib
+
+# Executables
+tsunami_sim
+tsunami_sim_comcot
+test_netcdf_io
+compare_okada
+compare_swe
+plot_tsunami_pgplot
+
+# Temporary Fortran Files
+DC3D.f
+
+# NetCDF Output Files
+tsunami_output.nc
+tsunami_output_comcat.nc
+*.nc
+
+# Output Directories
+plots/
+output/
+results/
+
+# Log Files
+*.log
+simulation*.log
+nohup.out
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# LaTeX
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.pdf
+
+# Editor and IDE
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+*.sublime-*
+.project
+.cproject
+.settings/
+
+# Operating System
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Backup Files
+*.bak
+*.backup
+*~
+
+# Compressed Files (optional - uncomment if needed)
+# *.zip
+# *.tar
+# *.tar.gz
+# *.tgz
+
+# Core Dumps
+core
+core.*
+
+# Other
+*.tmp
+.*.swp
+

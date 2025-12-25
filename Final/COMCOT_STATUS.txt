@@ -1,0 +1,153 @@
+================================================================================
+COMCOT INTEGRATION STATUS
+================================================================================
+
+Status: FRAMEWORK PREPARED (awaiting COMCOT source code)
+
+Files Created:
+--------------
+✓ README_COMCOT.md        - Comprehensive integration guide
+✓ mod_swe_comcot.f90      - Template wrapper module
+✓ compare_swe.f90         - Template comparison program
+✓ Makefile                - Updated with USE_COMCOT option
+
+What's Ready:
+-------------
+✓ Module structure defined
+✓ Interface specifications documented
+✓ Makefile compilation options added
+✓ Integration strategy documented
+✓ Comparison framework outlined
+
+What's Needed:
+--------------
+☐ COMCOT source code (download from GitHub or official site)
+☐ Extract SWE solver subroutines
+☐ Complete mod_swe_comcot.f90 implementation
+☐ Add COMCOT object files to Makefile
+☐ Complete compare_swe.f90 implementation
+☐ Test and validate
+
+How to Proceed:
+---------------
+
+STEP 1: Obtain COMCOT
+```bash
+# Option A: Clone from GitHub
+git clone https://github.com/comcot-tsunamilab/COMCOT.git
+
+# Option B: Download from official website
+# Visit: http://www.comcot.org/
+```
+
+STEP 2: Examine COMCOT Structure
+```bash
+cd COMCOT
+ls -la *.f *.f90  # List Fortran files
+# Look for:
+# - Main SWE time-stepping routines
+# - Grid initialization
+# - Boundary conditions
+```
+
+STEP 3: Extract Key Subroutines
+```bash
+# Copy needed files to your project
+cp COMCOT/[relevant_files].f /path/to/Final/comcot/
+```
+
+STEP 4: Complete Implementation
+- Fill in TODOs in mod_swe_comcot.f90
+- Map COMCOT data structures to swe_grid_type
+- Implement wrappers for COMCOT subroutines
+
+STEP 5: Update Makefile
+- Add COMCOT object file compilation rules
+- Link COMCOT subroutines with tsunami_sim
+
+STEP 6: Test
+```bash
+make clean
+make USE_COMCOT=1
+./tsunami_sim
+```
+
+Current Capabilities:
+--------------------
+
+WITHOUT COMCOT SOURCE:
+- ✓ Template modules compile
+- ✓ Documentation complete
+- ✓ Framework ready for integration
+- ⚠ COMCOT features not functional (template mode)
+
+WITH COMCOT SOURCE (after completion):
+- Run simulations with COMCOT SWE solver
+- Compare hand-written vs COMCOT results
+- Validate numerical methods
+- Benchmark performance
+- Choose optimal solver for specific scenarios
+
+Integration Timeline:
+--------------------
+
+Phase 1 (COMPLETED): Framework preparation
+- ✓ Create template modules
+- ✓ Document integration process
+- ✓ Update build system
+- ✓ Prepare comparison tools
+
+Phase 2 (AWAITING SOURCE): Implementation
+- ☐ Obtain COMCOT source (15 minutes)
+- ☐ Analyze COMCOT structure (30-60 minutes)
+- ☐ Extract needed subroutines (30 minutes)
+- ☐ Implement wrappers (1-2 hours)
+- ☐ Update Makefile (15 minutes)
+
+Phase 3 (AFTER PHASE 2): Testing
+- ☐ Compile with USE_COMCOT=1 (5 minutes)
+- ☐ Run basic tests (10 minutes)
+- ☐ Compare with hand-written solver (30 minutes)
+- ☐ Validate results (1 hour)
+- ☐ Document findings (30 minutes)
+
+Estimated Total Time: 4-6 hours (after obtaining COMCOT source)
+
+Documentation:
+-------------
+- README_COMCOT.md: Comprehensive guide with all details
+- mod_swe_comcot.f90: Inline comments explain each TODO
+- compare_swe.f90: Template shows comparison structure
+- This file: Quick reference and status tracker
+
+Alternative Approaches:
+----------------------
+
+If full integration is too complex:
+
+1. REFERENCE OUTPUT COMPARISON
+   - Run COMCOT separately
+   - Compare NetCDF outputs in Python
+   - No source code integration needed
+
+2. ALGORITHM EXTRACTION
+   - Study COMCOT's numerical methods
+   - Reimplement key algorithms
+   - Apply to hand-written solver
+
+3. PARAMETER OPTIMIZATION
+   - Use COMCOT for benchmarking
+   - Optimize hand-written solver parameters
+   - Match performance characteristics
+
+Contact/Resources:
+-----------------
+- COMCOT GitHub: https://github.com/comcot-tsunamilab/COMCOT
+- COMCOT Website: http://www.comcot.org/
+- User Manual: Included in COMCOT distribution
+- Academic Papers: Search "COMCOT tsunami" for publications
+
+================================================================================
+NEXT ACTION: Download COMCOT source code to proceed with integration
+================================================================================
+

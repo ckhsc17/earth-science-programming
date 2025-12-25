@@ -22,18 +22,13 @@ def load_tsunami_data(filename='tsunami_output.nc'):
     lon = nc.variables['lon'][:]
     lat = nc.variables['lat'][:]
     time = nc.variables['time'][:]
-    eta = nc.variables['eta'][:]  # Shape: (time, lat, lon) based on NetCDF output
+    eta = nc.variables['eta'][:]  # Shape: (lon, lat, time)
     
     # Convert to numpy arrays
     lon = np.array(lon)
     lat = np.array(lat)
     time = np.array(time)
     eta = np.array(eta)
-    
-    # Transpose eta to (lon, lat, time) for easier indexing
-    # Original: (time, lat, lon) -> Transpose to: (lon, lat, time)
-    if eta.shape[0] == len(time):
-        eta = np.transpose(eta, (2, 1, 0))  # (time, lat, lon) -> (lon, lat, time)
     
     # Get metadata
     n_times = len(time)

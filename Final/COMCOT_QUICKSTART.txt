@@ -1,0 +1,207 @@
+================================================================================
+COMCOT INTEGRATION - QUICK START GUIDE
+================================================================================
+
+好消息！找到了更適合的 COMCOT 版本！
+
+Repository: https://github.com/AndybnACT/comcot-gfortran
+由 NCU (National Central University) 的海嘯研究團隊維護
+
+================================================================================
+為什麼這個版本更好？
+================================================================================
+
+✅ 已經移植到 gfortran（我們用的編譯器）
+✅ 清晰的模組化結構
+✅ 包含完整的 Makefile
+✅ 已經用 2011 東北地震測試過
+✅ 程式碼更現代化（Fortran 90）
+
+================================================================================
+立即開始
+================================================================================
+
+步驟 1: 下載 COMCOT 源碼
+-----------------------
+
+選項 A - Git Clone（推薦）:
+```bash
+cd /path/to/Final
+git clone https://github.com/AndybnACT/comcot-gfortran.git comcot_source
+```
+
+選項 B - 手動下載:
+1. 訪問 https://github.com/AndybnACT/comcot-gfortran
+2. 點擊 "Code" → "Download ZIP"
+3. 解壓到 Final/comcot_source/
+
+選項 C - curl 下載:
+```bash
+cd /path/to/Final
+curl -L https://github.com/AndybnACT/comcot-gfortran/archive/refs/heads/master.zip -o comcot.zip
+unzip comcot.zip
+mv comcot-gfortran-master comcot_source
+```
+
+步驟 2: 檢查下載的檔案
+---------------------
+```bash
+cd comcot_source
+ls -la *.f90
+```
+
+應該看到：
+- type_module.f90  (型別定義)
+- mass.f90         (質量守恆)
+- moment.f90       (動量方程)
+- boundaries.f90   (邊界條件)
+- initialization.f90 (初始化)
+- 其他輔助檔案
+
+步驟 3: 整合策略
+---------------
+
+我們需要從 COMCOT 提取以下核心功能：
+
+【高優先級 - 必須】
+1. mass.f90     → 質量守恆方程（連續方程）
+2. moment.f90   → 動量方程（x和y方向）
+3. boundaries.f90 → 邊界條件處理
+
+【中優先級 - 可選】
+4. type_module.f90 → 了解 COMCOT 的資料結構
+5. initialization.f90 → 參考初始化方法
+
+【低優先級 - 參考】
+6. all_grids.f90 → 多重網格（我們目前用單一網格）
+7. comcot.f90 → 主程式（僅供參考）
+8. deform.f90 → Okada（我們已有 DC3D）
+
+步驟 4: 資料結構對應
+-------------------
+
+COMCOT 使用:
+```fortran
+type grid_type
+    real, allocatable :: z(:,:)  ! 地形
+    real, allocatable :: h(:,:)  ! 水深
+    real, allocatable :: m(:,:)  ! x方向動量 (hu)
+    real, allocatable :: n(:,:)  ! y方向動量 (hv)
+end type
+```
+
+我們的結構:
+```fortran
+type swe_grid_type
+    real(8), allocatable :: bath(:,:)  ! 地形
+    real(8), allocatable :: eta(:,:)   ! 水位
+    real(8), allocatable :: h(:,:)     ! 總水深
+    real(8), allocatable :: u(:,:)     ! x方向速度
+    real(8), allocatable :: v(:,:)     ! y方向速度
+end type
+```
+
+對應關係:
+- COMCOT z  ↔ 我們的 bath
+- COMCOT h  ↔ 我們的 h
+- COMCOT m  ↔ 我們的 h*u
+- COMCOT n  ↔ 我們的 h*v
+
+步驟 5: 實作 mod_swe_comcot.f90
+-------------------------------
+
+現在可以完成 mod_swe_comcot.f90 中的 TODO:
+
+```fortran
+! 1. 從 type_module.f90 了解 COMCOT 的資料結構
+! 2. 從 mass.f90 提取質量守恆的時間步進
+! 3. 從 moment.f90 提取動量方程的時間步進  
+! 4. 從 boundaries.f90 提取邊界條件
+! 5. 建立我們的 swe_grid_type 和 COMCOT 格式之間的轉換
+```
+
+步驟 6: 更新 Makefile
+--------------------
+
+```makefile
+# 加入 COMCOT 源碼
+COMCOT_DIR = comcot_source
+COMCOT_OBJS = $(COMCOT_DIR)/mass.o $(COMCOT_DIR)/moment.o $(COMCOT_DIR)/boundaries.o
+
+# 編譯 COMCOT 模組
+$(COMCOT_DIR)/%.o: $(COMCOT_DIR)/%.f90
+	$(FC) $(FFLAGS) -c $< -o $@
+```
+
+步驟 7: 測試
+-----------
+
+```bash
+# 編譯（使用 COMCOT）
+make clean
+make USE_COMCOT=1
+
+# 執行
+./tsunami_sim
+
+# 比較結果
+make compare_swe
+./compare_swe
+```
+
+================================================================================
+預期工作時間（下載後）
+================================================================================
+
+✓ 檢查 COMCOT 結構: 30分鐘
+✓ 提取核心子程式: 1小時
+✓ 完成 mod_swe_comcot.f90: 2小時
+✓ 更新 Makefile: 30分鐘
+✓ 測試和驗證: 1-2小時
+
+總計: 5-6小時
+
+================================================================================
+已準備好的檔案
+================================================================================
+
+✓ mod_swe_comcot.f90  - 模板已建立，有詳細 TODO
+✓ compare_swe.f90     - 比較程式框架
+✓ README_COMCOT.md    - 已更新為指向新 repo
+✓ Makefile           - 已有 USE_COMCOT 選項框架
+
+================================================================================
+關鍵差異：comcot-gfortran vs 原始 COMCOT
+================================================================================
+
+comcot-gfortran 的優勢:
+1. 已經移植到 gfortran（不需要 Intel Fortran）
+2. 更現代的 Fortran 90 語法
+3. 更清晰的模組分離
+4. 有測試案例（2011東北地震）
+5. 較新的維護
+
+這使得整合工作容易很多！
+
+================================================================================
+下一步行動
+================================================================================
+
+請執行以下其中一個方法下載源碼：
+
+方法 1（最簡單）:
+```bash
+cd /Users/al01992937/Documents/earth-science-programming/Final
+git clone https://github.com/AndybnACT/comcot-gfortran.git comcot_source
+```
+
+方法 2（如果 git 有問題）:
+1. 瀏覽器訪問 https://github.com/AndybnACT/comcot-gfortran
+2. 點擊綠色的 "Code" 按鈕
+3. 選擇 "Download ZIP"
+4. 解壓到 Final/comcot_source/
+
+下載完成後，我們就可以開始實際整合工作！
+
+================================================================================
+
